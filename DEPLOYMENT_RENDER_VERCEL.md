@@ -31,8 +31,11 @@ Fill in the following settings:
 - **Branch**: `main`
 - **Root Directory**: `backend`
 - **Runtime**: `Python 3`
+- **Python Version**: `3.10` (or use `runtime.txt` file - already created)
 - **Build Command**: `pip install -r requirements.txt`
 - **Start Command**: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+
+**⚠️ Important**: The project includes a `runtime.txt` file that pins Python to 3.10.13 for compatibility. Render will automatically use this version.
 
 ### 1.3 Set Environment Variables
 
