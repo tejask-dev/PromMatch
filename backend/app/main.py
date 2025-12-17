@@ -41,6 +41,7 @@ async def lifespan(app: FastAPI):
     logger.info("🚀 Starting Prom Matchmaking API...")
     logger.info(f"📦 Version: {settings.VERSION}")
     logger.info(f"🔗 Supabase URL: {settings.SUPABASE_URL}")
+    logger.info(f"🌐 CORS Origins: {settings.BACKEND_CORS_ORIGINS}")
     
     # Initialize services on startup
     from app.services.database import DatabaseService
