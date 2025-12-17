@@ -6,8 +6,7 @@ import { Camera, Upload, ArrowRight, ArrowLeft, Sparkles, Heart } from 'lucide-r
 import toast from 'react-hot-toast';
 import axios from 'axios';
 import { convertToBase64 } from '../services/imageUpload';
-
-const API_BASE_URL = 'http://localhost:8000';
+import { API_BASE_URL } from '../config/api';
 
 const GRADE_OPTIONS = [
   { value: 'freshman', label: 'Freshman (9th)' },

@@ -5,8 +5,7 @@ import { Heart, Users, Sparkles, LogOut, ArrowRight, Star, Settings, Trash2, Ale
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
-
-const API_BASE_URL = 'http://localhost:8000';
+import { API_BASE_URL } from '../config/api';
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();

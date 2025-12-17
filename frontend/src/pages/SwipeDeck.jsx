@@ -9,7 +9,7 @@ import SkeletonCard from '../components/SkeletonCard';
 import MatchPopup from '../components/MatchPopup';
 import toast from 'react-hot-toast';
 
-const API_BASE_URL = 'http://localhost:8000';
+import { API_BASE_URL } from '../config/api';
 
 const SwipeDeck = () => {
   const { user } = useAuth();
