@@ -49,7 +49,10 @@ HUGGINGFACE_API_KEY=hf_your_huggingface_api_key_here
 DEBUG=False
 ```
 
-**⚠️ Important**: Don't set `BACKEND_CORS_ORIGINS` yet - we'll add it after frontend is deployed.
+**⚠️ Important**: 
+- `BACKEND_CORS_ORIGINS` is optional - if not set, it defaults to localhost URLs
+- You can set it later after frontend is deployed, or leave it empty
+- If you want to set it now, use JSON format: `["https://your-frontend.vercel.app"]` or comma-separated: `https://your-frontend.vercel.app`
 
 ### 1.4 Deploy
 
