@@ -29,9 +29,10 @@ async def create_or_update_profile(
     email = current_user.get("email") or f"{auth_id}@prommatch.app"
 
     # Known columns in the users table — keeps unknown schema fields from causing DB errors
+    # Note: "photos" is excluded — stored in user_photos table, not users table
     ALLOWED_COLUMNS = {
         "name", "bio", "gender", "looking_for", "grade", "school",
-        "hobbies", "socials", "profile_pic_url", "photos",
+        "hobbies", "socials", "profile_pic_url",
         "personality", "question_answers",
     }
 
