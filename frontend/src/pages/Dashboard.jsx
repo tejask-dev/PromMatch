@@ -1,388 +1,228 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
-import { Heart, Users, Sparkles, LogOut, ArrowRight, Star, Settings, Trash2, AlertTriangle, X } from 'lucide-react';
+import { Heart, Sparkles, LogOut, ArrowRight, Star, Settings, Trash2, AlertTriangle, X, Zap } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
-import { API_BASE_URL } from '../config/api';
+import { API_BASE_URL, getAuthHeaders } from '../config/api';
+import MatchCard from '../components/MatchCard';
+
+const AnimatedStat = ({ value, label, icon, delay }) => {
+  const [display, setDisplay] = useState(0);
+  useEffect(() => {
+    if (!value) return;
+    let v = 0;
+    const step = Math.max(1, Math.ceil(value / 20));
+    const t = setInterval(() => {
+      v += step;
+      if (v >= value) { setDisplay(value); clearInterval(t); }
+      else setDisplay(v);
+    }, 40);
+    return () => clearInterval(t);
+  }, [value]);
+  return (
+    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: delay || 0 }} className="glass-card rounded-2xl p-4 text-center">
+      <div className="text-2xl mb-1">{icon}</div>
+      <p className="text-3xl font-black text-white">{display}</p>
+      <p className="text-white/50 text-xs mt-0.5">{label}</p>
+    </motion.div>
+  );
+};
 
 const Dashboard = () => {
-  const { user, signOut } = useAuth();
+  const { user, signOut, getToken } = useAuth();
   const navigate = useNavigate();
   const [matches, setMatches] = useState([]);
-  const [stats, setStats] = useState({ total_matches: 0, super_matches: 0 });
+  const [stats, setStats] = useState({ total_matches: 0, super_matches: 0, regular_matches: 0 });
   const [loading, setLoading] = useState(true);
-  const [profileExists, setProfileExists] = useState(true);
+  const [hasAnswers, setHasAnswers] = useState(true);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      checkProfile();
-      fetchData();
-    }
+    if (user) { checkProfile(); fetchData(); }
   }, [user]);
 
   const checkProfile = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/users/profile/check/${user.id}`);
-      if (!response.data.exists) {
-        setProfileExists(false);
-        navigate('/profile-setup');
-      }
-    } catch (error) {
-      console.error('Error checking profile:', error);
-    }
+      const res = await axios.get(`${API_BASE_URL}/users/profile/check/${user.id}`);
+      if (!res.data.exists) navigate('/profile-setup');
+    } catch (e) {}
   };
 
   const fetchData = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
+      const token = getToken();
+      const headers = token ? getAuthHeaders(token) : {};
       const [matchesRes, statsRes] = await Promise.all([
-        axios.get(`${API_BASE_URL}/matches/${user.id}`),
-        axios.get(`${API_BASE_URL}/stats/${user.id}`)
+        axios.get(`${API_BASE_URL}/matches`, { headers }),
+        axios.get(`${API_BASE_URL}/stats`, { headers }),
       ]);
-      setMatches(matchesRes.data.matches);
+      setMatches(matchesRes.data.matches || []);
       setStats(statsRes.data);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      // Don't show error if profile doesn't exist yet
-      if (profileExists) {
-        toast.error('Error loading data');
-      }
+      try {
+        const profileRes = await axios.get(`${API_BASE_URL}/users/profile/${user.id}`);
+        const qa = profileRes.data?.profile?.question_answers || {};
+        setHasAnswers(Object.keys(qa).length > 3);
+      } catch (e) {}
+    } catch (e) {
+      toast.error('Error loading data');
     } finally {
       setLoading(false);
     }
   };
 
   const handleSignOut = async () => {
-    try {
-      await signOut();
-      toast.success('Signed out successfully');
-      navigate('/');
-    } catch (error) {
-      toast.error('Error signing out');
-    }
+    try { await signOut(); navigate('/'); }
+    catch (e) { toast.error('Error signing out'); }
   };
 
   const handleDeleteAccount = async () => {
-    if (deleteConfirmText !== 'DELETE') {
-      toast.error('Please type "DELETE" to confirm');
-      return;
-    }
-
+    if (deleteConfirmText !== 'DELETE') { toast.error('Type "DELETE" to confirm'); return; }
     setIsDeleting(true);
     try {
-      await axios.delete(`${API_BASE_URL}/users/account/${user.id}`, {
-        headers: {
-          'Authorization': `Bearer ${user.id}`
-        }
-      });
-      
-      toast.success('Account deleted successfully');
-      
-      // Sign out and redirect
+      const token = getToken();
+      await axios.delete(`${API_BASE_URL}/users/account/${user.id}`, { headers: getAuthHeaders(token) });
+      toast.success('Account deleted');
       await signOut();
       navigate('/');
-    } catch (error) {
-      console.error('Error deleting account:', error);
-      toast.error(error.response?.data?.detail || 'Failed to delete account');
+    } catch (e) {
+      toast.error(e.response?.data?.detail || 'Failed to delete account');
       setIsDeleting(false);
     }
   };
 
+  const initials = user?.email?.charAt(0).toUpperCase() || '?';
+
   return (
-    <div className="min-h-screen pb-8">
-      {/* Header */}
-      <div className="bg-white/80 backdrop-blur-lg shadow-sm sticky top-0 z-10">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-pink-500 to-purple-600 rounded-xl flex items-center justify-center">
-                <Heart className="w-5 h-5 text-white" fill="white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">PromMatch</h1>
-                <p className="text-xs text-gray-500">Find your perfect date</p>
-              </div>
+    <div className="min-h-screen pb-12">
+      {/* Nav */}
+      <div className="glass sticky top-0 z-20">
+        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm" style={{ background: 'linear-gradient(135deg, #ff1a91, #7c3aed)' }}>
+              {initials}
             </div>
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={() => navigate('/profile-setup')}
-                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
-                title="Settings"
-              >
-                <Settings className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => setShowDeleteModal(true)}
-                className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-xl transition-colors"
-                title="Delete Account"
-              >
-                <Trash2 className="w-5 h-5" />
-              </button>
-              <button
-                onClick={handleSignOut}
-                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
-                title="Sign Out"
-              >
-                <LogOut className="w-5 h-5" />
-              </button>
-            </div>
+            <span className="font-prom text-xl gradient-text">PromMatch</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <button onClick={() => navigate('/questionnaire')} className="p-2 rounded-xl text-white/60 hover:text-white hover:bg-white/10 transition-all" title="Vibe Check">
+              <Sparkles className="w-5 h-5" />
+            </button>
+            <button onClick={() => navigate('/profile-setup')} className="p-2 rounded-xl text-white/60 hover:text-white hover:bg-white/10 transition-all" title="Edit Profile">
+              <Settings className="w-5 h-5" />
+            </button>
+            <button onClick={() => setShowDeleteModal(true)} className="p-2 rounded-xl text-red-400/60 hover:text-red-400 hover:bg-red-500/10 transition-all">
+              <Trash2 className="w-5 h-5" />
+            </button>
+            <button onClick={handleSignOut} className="p-2 rounded-xl text-white/60 hover:text-white hover:bg-white/10 transition-all">
+              <LogOut className="w-5 h-5" />
+            </button>
           </div>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-6">
-        {/* Welcome Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 rounded-3xl p-6 text-white mb-6 relative overflow-hidden"
-        >
-          <div className="absolute -right-10 -top-10 w-40 h-40 bg-white/10 rounded-full"></div>
-          <div className="absolute -right-5 -bottom-10 w-32 h-32 bg-white/10 rounded-full"></div>
+      <div className="max-w-2xl mx-auto px-4 pt-6 space-y-5">
+        {/* Hero */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+          className="rounded-3xl p-6 relative overflow-hidden"
+          style={{ background: 'linear-gradient(135deg, #ff1a91 0%, #7c3aed 60%, #1a0533 100%)' }}>
+          <div className="absolute -right-8 -top-8 w-36 h-36 rounded-full bg-white/10" />
+          <div className="absolute -right-4 -bottom-8 w-24 h-24 rounded-full bg-white/10" />
+          <div className="absolute -left-4 bottom-0 text-6xl opacity-10 select-none">💕</div>
           <div className="relative">
-            <h2 className="text-2xl font-bold mb-2">Ready for Prom? 💃🕺</h2>
-            <p className="text-white/80 mb-4">Start swiping to find your perfect match!</p>
-            <button
-              onClick={() => navigate('/swipe')}
-              className="bg-white text-purple-600 font-semibold px-6 py-3 rounded-xl hover:bg-gray-100 transition-colors flex items-center"
-            >
-              Start Swiping
-              <ArrowRight className="w-5 h-5 ml-2" />
+            <p className="text-white/70 text-sm mb-1">Ready to find your prom date?</p>
+            <h2 className="text-2xl font-black text-white mb-4">Let's Find Your Match ✨</h2>
+            <button onClick={() => navigate('/swipe')}
+              className="flex items-center gap-2 bg-white text-purple-700 font-bold px-5 py-2.5 rounded-xl hover:bg-gray-100 transition-colors text-sm">
+              Start Swiping <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         </motion.div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="bg-white/80 backdrop-blur-lg rounded-2xl p-4 text-center"
-          >
-            <div className="w-12 h-12 bg-pink-100 rounded-xl flex items-center justify-center mx-auto mb-2">
-              <Heart className="w-6 h-6 text-pink-500" />
+        {/* Questionnaire CTA */}
+        {!hasAnswers && (
+          <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }}
+            className="glass-card rounded-2xl p-4 flex items-center gap-4 cursor-pointer hover:bg-white/10 transition-colors"
+            onClick={() => navigate('/questionnaire')}>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, #ff1a91, #7c3aed)' }}>
+              <Zap className="w-5 h-5 text-white" />
             </div>
-            <p className="text-2xl font-bold text-gray-900">{stats.total_matches}</p>
-            <p className="text-xs text-gray-500">Total Matches</p>
+            <div className="flex-1 min-w-0">
+              <p className="font-bold text-white text-sm">Boost Your Matches 🚀</p>
+              <p className="text-white/50 text-xs">Answer a few questions for smarter recommendations</p>
+            </div>
+            <ArrowRight className="w-4 h-4 text-white/30 flex-shrink-0" />
           </motion.div>
+        )}
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="bg-white/80 backdrop-blur-lg rounded-2xl p-4 text-center"
-          >
-            <div className="w-12 h-12 bg-yellow-100 rounded-xl flex items-center justify-center mx-auto mb-2">
-              <Star className="w-6 h-6 text-yellow-500" fill="currentColor" />
-            </div>
-            <p className="text-2xl font-bold text-gray-900">{stats.super_matches}</p>
-            <p className="text-xs text-gray-500">Super Matches</p>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="bg-white/80 backdrop-blur-lg rounded-2xl p-4 text-center"
-          >
-            <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mx-auto mb-2">
-              <Sparkles className="w-6 h-6 text-purple-500" />
-            </div>
-            <p className="text-2xl font-bold text-gray-900">{stats.regular_matches || 0}</p>
-            <p className="text-xs text-gray-500">Regular Matches</p>
-          </motion.div>
+        {/* Stats */}
+        <div className="grid grid-cols-3 gap-3">
+          <AnimatedStat value={stats.total_matches} label="Total Matches" icon="💕" delay={0.1} />
+          <AnimatedStat value={stats.super_matches} label="Super Matches" icon="⭐" delay={0.2} />
+          <AnimatedStat value={stats.regular_matches} label="Regular" icon="✨" delay={0.3} />
         </div>
 
-        {/* Matches Section */}
-        <div className="bg-white/80 backdrop-blur-lg rounded-3xl p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-gray-900">Your Matches 💕</h2>
-            <button
-              onClick={fetchData}
-              className="text-sm text-pink-500 hover:text-pink-600"
-            >
-              Refresh
-            </button>
+        {/* Matches */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-bold text-white text-lg">Your Matches 💕</h2>
+            <button onClick={fetchData} className="text-xs text-white/40 hover:text-white/70 transition-colors">Refresh</button>
           </div>
-
           {loading ? (
-            <div className="flex justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500"></div>
+            <div className="flex justify-center py-10">
+              <div className="w-8 h-8 rounded-full border-2 border-white/10 border-t-pink-500 animate-spin" />
             </div>
           ) : matches.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Users className="w-10 h-10 text-gray-300" />
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No matches yet</h3>
-              <p className="text-gray-500 mb-4">Start swiping to find your prom date!</p>
-              <button
-                onClick={() => navigate('/swipe')}
-                className="px-6 py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-xl font-medium hover:opacity-90"
-              >
-                Start Swiping
-              </button>
-            </div>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="glass-card rounded-2xl p-8 text-center">
+              <div className="text-5xl mb-3">💭</div>
+              <h3 className="font-bold text-white mb-1">No matches yet</h3>
+              <p className="text-white/40 text-sm mb-4">Start swiping to find your prom date!</p>
+              <button onClick={() => navigate('/swipe')} className="btn-prom px-6 py-2.5 text-sm">Start Swiping</button>
+            </motion.div>
           ) : (
-            <div className="grid gap-4">
-              {matches.map((match, index) => (
-                <motion.div
-                  key={match.match_id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="flex items-center p-4 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-colors"
-                >
-                  <div className="w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-pink-100 to-purple-100 flex-shrink-0">
-                    {match.other_user?.profile_pic_url ? (
-                      <img
-                        src={match.other_user.profile_pic_url}
-                        alt={match.other_user.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-2xl">
-                        👤
-                      </div>
-                    )}
-                  </div>
-                  <div className="ml-4 flex-1">
-                    <div className="flex items-center">
-                      <h4 className="font-semibold text-gray-900">{match.other_user?.name}</h4>
-                      {match.is_super_match && (
-                        <Star className="w-4 h-4 text-yellow-500 ml-1" fill="currentColor" />
-                      )}
-                    </div>
-                    <p className="text-sm text-gray-500 capitalize">
-                      {match.other_user?.grade} • {match.other_user?.gender}
-                    </p>
-                  </div>
-                  
-                  {/* Social Links */}
-                  <div className="flex space-x-2">
-                    {match.other_user?.socials?.instagram && (
-                      <a
-                        href={`https://instagram.com/${match.other_user.socials.instagram.replace('@', '')}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-2 bg-pink-100 text-pink-600 rounded-lg hover:bg-pink-200 transition-colors text-xs font-medium"
-                      >
-                        IG
-                      </a>
-                    )}
-                    {match.other_user?.socials?.snapchat && (
-                      <a
-                        href={`https://snapchat.com/add/${match.other_user.socials.snapchat}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-2 bg-yellow-100 text-yellow-600 rounded-lg hover:bg-yellow-200 transition-colors text-xs font-medium"
-                      >
-                        SC
-                      </a>
-                    )}
-                  </div>
-                </motion.div>
-              ))}
+            <div className="space-y-3">
+              {matches.map((match, i) => <MatchCard key={match.match_id} match={match} index={i} />)}
             </div>
           )}
         </div>
       </div>
 
-      {/* Delete Account Modal */}
+      {/* Delete modal */}
       <AnimatePresence>
         {showDeleteModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-            onClick={() => !isDeleting && setShowDeleteModal(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl"
-            >
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(12px)' }}
+            onClick={() => !isDeleting && setShowDeleteModal(false)}>
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              className="glass-card rounded-3xl p-6 max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
-                    <AlertTriangle className="w-6 h-6 text-red-600" />
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(244,63,94,0.2)' }}>
+                    <AlertTriangle className="w-5 h-5 text-red-400" />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900">Delete Account</h3>
+                  <h3 className="font-bold text-white">Delete Account</h3>
                 </div>
-                {!isDeleting && (
-                  <button
-                    onClick={() => setShowDeleteModal(false)}
-                    className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                )}
+                {!isDeleting && <button onClick={() => setShowDeleteModal(false)} className="text-white/40 hover:text-white"><X className="w-5 h-5" /></button>}
               </div>
-
-              <div className="space-y-4">
-                <p className="text-gray-600">
-                  This action cannot be undone. This will permanently delete your account and remove all of your data from our servers.
-                </p>
-
-                <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-                  <p className="text-sm font-semibold text-red-900 mb-2">What will be deleted:</p>
-                  <ul className="text-sm text-red-800 space-y-1 list-disc list-inside">
-                    <li>Your profile and personal information</li>
-                    <li>All your matches</li>
-                    <li>All your swipe history</li>
-                    <li>Your account credentials</li>
-                  </ul>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Type <span className="font-bold text-red-600">DELETE</span> to confirm:
-                  </label>
-                  <input
-                    type="text"
-                    value={deleteConfirmText}
-                    onChange={(e) => setDeleteConfirmText(e.target.value)}
-                    disabled={isDeleting}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                    placeholder="Type DELETE to confirm"
-                  />
-                </div>
-
-                <div className="flex space-x-3 pt-2">
-                  <button
-                    onClick={() => {
-                      setShowDeleteModal(false);
-                      setDeleteConfirmText('');
-                    }}
-                    disabled={isDeleting}
-                    className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 rounded-xl font-medium hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleDeleteAccount}
-                    disabled={isDeleting || deleteConfirmText !== 'DELETE'}
-                    className="flex-1 px-4 py-3 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-                  >
-                    {isDeleting ? (
-                      <>
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                        Deleting...
-                      </>
-                    ) : (
-                      'Delete Account'
-                    )}
-                  </button>
-                </div>
+              <p className="text-white/60 text-sm mb-4">This will permanently delete all your data, matches, and swipes.</p>
+              <div className="mb-4">
+                <label className="block text-white/50 text-xs mb-1.5">Type <span className="text-red-400 font-bold">DELETE</span> to confirm:</label>
+                <input type="text" value={deleteConfirmText} onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  disabled={isDeleting} className="input-dark text-sm" placeholder="DELETE" />
+              </div>
+              <div className="flex gap-3">
+                <button onClick={() => { setShowDeleteModal(false); setDeleteConfirmText(''); }}
+                  disabled={isDeleting} className="flex-1 btn-glass py-2.5 text-sm rounded-xl">Cancel</button>
+                <button onClick={handleDeleteAccount} disabled={isDeleting || deleteConfirmText !== 'DELETE'}
+                  className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  style={{ background: 'linear-gradient(135deg, #dc2626, #991b1b)' }}>
+                  {isDeleting ? <><div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />Deleting…</> : 'Delete Account'}
+                </button>
               </div>
             </motion.div>
           </motion.div>

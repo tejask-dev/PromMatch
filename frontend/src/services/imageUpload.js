@@ -1,33 +1,47 @@
-// Free image upload service using Cloudinary
-// Sign up at https://cloudinary.com/ for free (25GB storage, 25GB bandwidth/month)
+import { supabase } from '../lib/supabase';
 
-const CLOUDINARY_UPLOAD_PRESET = 'your_upload_preset'; // Get from Cloudinary dashboard
-const CLOUDINARY_CLOUD_NAME = 'your_cloud_name'; // Get from Cloudinary dashboard
+/**
+ * Upload an image file to Supabase Storage.
+ * Requires a 'profile-photos' bucket to exist in Supabase Storage (public).
+ */
+export const uploadToSupabase = async (file, userId) => {
+  const fileExt = file.name.split('.').pop().toLowerCase();
+  const fileName = `${userId}/${Date.now()}_${Math.random().toString(36).slice(2)}.${fileExt}`;
 
-export const uploadToCloudinary = async (file) => {
+  const { data, error } = await supabase.storage
+    .from('profile-photos')
+    .upload(fileName, file, {
+      cacheControl: '3600',
+      upsert: false,
+      contentType: file.type,
+    });
+
+  if (error) throw new Error(`Upload failed: ${error.message}`);
+
+  const { data: { publicUrl } } = supabase.storage
+    .from('profile-photos')
+    .getPublicUrl(fileName);
+
+  return publicUrl;
+};
+
+/**
+ * Delete a photo from Supabase Storage by public URL.
+ */
+export const deleteFromSupabase = async (publicUrl) => {
   try {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-    formData.append('cloud_name', CLOUDINARY_CLOUD_NAME);
-
-    const response = await fetch(
-      `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
-      {
-        method: 'POST',
-        body: formData,
-      }
-    );
-
-    const data = await response.json();
-    return data.secure_url;
-  } catch (error) {
-    console.error('Error uploading to Cloudinary:', error);
-    throw error;
+    const url = new URL(publicUrl);
+    const pathParts = url.pathname.split('/profile-photos/');
+    if (pathParts.length < 2) return;
+    await supabase.storage.from('profile-photos').remove([pathParts[1]]);
+  } catch {
+    // Silently fail
   }
 };
 
-// Alternative: Convert to base64 for free storage in Firestore
+/**
+ * Convert file to base64 data URL (for previews only)
+ */
 export const convertToBase64 = (file) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -35,23 +49,4 @@ export const convertToBase64 = (file) => {
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
-};
-
-// Alternative: Use ImgBB (completely free, no registration needed)
-export const uploadToImgBB = async (file) => {
-  try {
-    const formData = new FormData();
-    formData.append('image', file);
-
-    const response = await fetch('https://api.imgbb.com/1/upload?key=YOUR_API_KEY', {
-      method: 'POST',
-      body: formData,
-    });
-
-    const data = await response.json();
-    return data.data.url;
-  } catch (error) {
-    console.error('Error uploading to ImgBB:', error);
-    throw error;
-  }
 };

@@ -49,8 +49,9 @@ class Settings(BaseSettings):
                 return [origin.strip() for origin in v.split(',') if origin.strip()]
         return v
     
-    # JWT (Supabase uses its own JWT, but we verify it)
-    JWT_SECRET: Optional[str] = None  # Will use Supabase JWT secret
+    # JWT - Supabase JWT secret for token verification
+    # Get from: Supabase Dashboard → Settings → API → JWT Secret
+    SUPABASE_JWT_SECRET: Optional[str] = None
     
     class Config:
         env_file = ".env"

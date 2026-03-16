@@ -2,6 +2,16 @@ from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any, Literal
 from datetime import datetime
 
+class UserPhoto(BaseModel):
+    id: str
+    url: str
+    order_index: int
+    is_primary: bool = False
+
+class PhotoUpload(BaseModel):
+    url: str
+    order_index: Optional[int] = None
+
 class UserProfileBase(BaseModel):
     name: str = Field(..., min_length=2, max_length=50)
     bio: str = Field(..., max_length=500)
@@ -11,8 +21,9 @@ class UserProfileBase(BaseModel):
     hobbies: List[str]
     socials: Dict[str, str]
     profile_pic_url: Optional[str] = None
+    photos: Optional[List[UserPhoto]] = []
     personality: str = Field(..., min_length=50)
-    question_answers: Dict[str, str]
+    question_answers: Dict[str, Any] = Field(default_factory=dict)
 
 class UserProfileCreate(UserProfileBase):
     user_id: str
@@ -23,22 +34,22 @@ class UserProfile(UserProfileBase):
     updated_at: Optional[datetime] = None
 
 class SwipeAction(BaseModel):
-    user_id: str
     target_user_id: str
-    action: str = Field(..., pattern="^(yes|no|super)$") # Added 'super' like
+    action: str = Field(..., pattern="^(yes|no|super)$")
 
 class Match(BaseModel):
     match_id: str
     users: List[str]
     created_at: datetime
     is_super_match: bool = False
+    compatibility_score: Optional[float] = None
     other_user: Optional[UserProfile] = None
 
 class Recommendation(BaseModel):
     user_id: str
     profile: UserProfile
     similarity_score: float
-    compatibility_percentage: int
+    compatibility_percentage: float
 
-class ProfileEmbedding(UserProfileBase): # Inherit to ensure all fields are present
+class ProfileEmbedding(UserProfileBase):
     user_id: str

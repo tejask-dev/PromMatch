@@ -1,35 +1,97 @@
+@import url('https://fonts.googleapis.com/css2?family=Pacifico&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
+  * {
+    box-sizing: border-box;
+  }
   html {
-    font-family: 'Inter', system-ui, sans-serif;
+    scroll-behavior: smooth;
   }
-  
   body {
-    @apply bg-gray-50 text-gray-900;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    background: linear-gradient(135deg, #0f0720 0%, #1a0533 40%, #2d1b69 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+    color: white;
+    -webkit-font-smoothing: antialiased;
   }
+  /* Custom scrollbar */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 10px; }
+  ::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #ff1a91, #7c3aed); border-radius: 10px; }
 }
 
-@layer components {
-  .btn-primary {
-    @apply bg-primary-500 hover:bg-primary-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+@layer utilities {
+  .glass {
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.12);
   }
-  
-  .btn-secondary {
-    @apply bg-secondary-500 hover:bg-secondary-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+  .glass-dark {
+    background: rgba(0,0,0,0.35);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.08);
   }
-  
-  .btn-outline {
-    @apply border-2 border-primary-500 text-primary-500 hover:bg-primary-500 hover:text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200;
+  .glass-card {
+    background: rgba(255,255,255,0.07);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255,255,255,0.1);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08);
   }
-  
-  .card {
-    @apply bg-white rounded-xl shadow-lg p-6;
+  .gradient-text {
+    background: linear-gradient(135deg, #ff1a91, #7c3aed);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
-  
-  .input-field {
-    @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200;
+  .gradient-text-gold {
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .font-prom {
+    font-family: 'Pacifico', cursive;
+  }
+  .btn-prom {
+    @apply font-semibold px-6 py-3 rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+    background: linear-gradient(135deg, #ff1a91, #7c3aed);
+    color: white;
+  }
+  .btn-prom:hover:not(:disabled) {
+    opacity: 0.9;
+    transform: scale(1.02);
+  }
+  .btn-prom:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+  .btn-glass {
+    @apply glass text-white font-medium px-6 py-3 rounded-xl transition-all duration-200 hover:bg-white/20 active:scale-95;
+  }
+  .input-dark {
+    @apply w-full px-4 py-3 rounded-xl text-white placeholder-white/40 focus:outline-none transition-all duration-200;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+  .input-dark:focus {
+    background: rgba(255,255,255,0.12);
+    border-color: rgba(255,26,145,0.6);
+    box-shadow: 0 0 0 3px rgba(255,26,145,0.15);
+  }
+  .glow-pink {
+    box-shadow: 0 0 20px rgba(255,26,145,0.4), 0 0 40px rgba(255,26,145,0.15);
+  }
+  .glow-purple {
+    box-shadow: 0 0 20px rgba(124,58,237,0.4), 0 0 40px rgba(124,58,237,0.15);
+  }
+  .glow-gold {
+    box-shadow: 0 0 20px rgba(245,158,11,0.5), 0 0 40px rgba(245,158,11,0.2);
   }
 }

@@ -8,6 +8,7 @@ import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import SwipeDeck from './pages/SwipeDeck';
 import ProfileSetup from './pages/ProfileSetup';
+import Questionnaire from './pages/Questionnaire';
 import LoadingSpinner from './components/LoadingSpinner';
 
 // Protected Route Component
@@ -48,7 +49,7 @@ function AppRoutes() {
         v7_relativeSplatPath: true,
       }}
     >
-      <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50">
+      <div className="min-h-screen" style={{ background: 'linear-gradient(135deg, #0f0720 0%, #1a0533 40%, #2d1b69 100%)' }}>
         <Toaster 
           position="top-center"
           toastOptions={{
@@ -106,13 +107,21 @@ function AppRoutes() {
               </ProtectedRoute>
             } 
           />
-          <Route 
-            path="/swipe" 
+          <Route
+            path="/swipe"
             element={
               <ProtectedRoute>
                 <SwipeDeck />
               </ProtectedRoute>
-            } 
+            }
+          />
+          <Route
+            path="/questionnaire"
+            element={
+              <ProtectedRoute>
+                <Questionnaire />
+              </ProtectedRoute>
+            }
           />
         </Routes>
       </div>

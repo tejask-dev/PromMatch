@@ -278,3 +278,33 @@ class DatabaseService:
         if not user:
             return []
         return await self.get_user_matches(user["id"])
+
+    # ==========================================
+    # PHOTO OPERATIONS
+    # ==========================================
+
+    async def add_user_photo(self, user_id: str, url: str, order_index: int, is_primary: bool = False) -> Dict[str, Any]:
+        """Add a photo to user's profile"""
+        result = self._client.table("user_photos").insert({
+            "user_id": user_id,
+            "url": url,
+            "order_index": order_index,
+            "is_primary": is_primary
+        }).execute()
+        return result.data[0] if result.data else None
+
+    async def delete_user_photo(self, photo_id: str, user_id: str) -> bool:
+        """Delete a photo, verifying ownership"""
+        result = self._client.table("user_photos").delete().eq("id", photo_id).eq("user_id", user_id).execute()
+        return result.data is not None
+
+    async def get_user_photos(self, user_id: str) -> List[Dict[str, Any]]:
+        """Get all photos for a user, ordered"""
+        result = self._client.table("user_photos").select("*").eq("user_id", user_id).order("order_index").execute()
+        return result.data or []
+
+    async def set_primary_photo(self, user_id: str, photo_id: str) -> bool:
+        """Set a photo as primary (clears other primaries first)"""
+        self._client.table("user_photos").update({"is_primary": False}).eq("user_id", user_id).execute()
+        result = self._client.table("user_photos").update({"is_primary": True}).eq("id", photo_id).eq("user_id", user_id).execute()
+        return len(result.data) > 0

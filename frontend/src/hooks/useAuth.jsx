@@ -62,6 +62,8 @@ export const AuthProvider = ({ children }) => {
     if (error) throw error;
   };
 
+  const getToken = () => session?.access_token ?? null;
+
   const value = {
     user,
     session,
@@ -70,6 +72,7 @@ export const AuthProvider = ({ children }) => {
     signIn,
     signInWithGoogle,
     signOut,
+    getToken,
   };
 
   return (

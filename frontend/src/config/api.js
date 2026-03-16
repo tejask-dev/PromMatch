@@ -2,3 +2,8 @@
 // Uses environment variable in production, localhost in development
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
+
+// Helper to build auth headers
+export const getAuthHeaders = (token) => ({
+  'Authorization': `Bearer ${token}`,
+});
