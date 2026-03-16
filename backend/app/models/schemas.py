@@ -23,7 +23,7 @@ class UserProfileBase(BaseModel):
     socials: Dict[str, str]
     profile_pic_url: Optional[str] = None
     photos: Optional[List[UserPhoto]] = []
-    personality: str = Field(..., min_length=30)
+    personality: str = Field(..., min_length=1)
     question_answers: Dict[str, Any] = Field(default_factory=dict)
 
 class UserProfileCreate(UserProfileBase):

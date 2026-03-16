@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
@@ -7,6 +7,8 @@ import toast from 'react-hot-toast';
 import axios from 'axios';
 import { uploadToSupabase } from '../services/imageUpload';
 import { API_BASE_URL, getAuthHeaders } from '../config/api';
+
+const wordCount = (str) => str.trim().split(/\s+/).filter(Boolean).length;
 
 const GRADE_OPTIONS = [
   { value: 'junior', label: 'Grade 11 (Junior)' },
@@ -50,7 +52,9 @@ const ProfileSetup = () => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [photos, setPhotos] = useState(Array(6).fill(null)); // [{file, preview, url}]
+  const [loadingProfile, setLoadingProfile] = useState(true);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [photos, setPhotos] = useState(Array(6).fill(null));
   const [uploadingSlot, setUploadingSlot] = useState(null);
   const fileRefs = useRef([]);
 
@@ -66,6 +70,48 @@ const ProfileSetup = () => {
     personality: '',
     question_answers: PERSONALITY_QUESTIONS.reduce((acc, q) => ({ ...acc, [q]: '' }), {}),
   });
+
+  // Load existing profile on mount
+  useEffect(() => {
+    if (!user) return;
+    const load = async () => {
+      try {
+        const res = await axios.get(`${API_BASE_URL}/users/profile/${user.id}`);
+        const p = res.data?.profile;
+        if (p) {
+          setIsEditMode(true);
+          setFormData({
+            name: p.name || '',
+            bio: p.bio || '',
+            gender: p.gender || '',
+            looking_for: p.looking_for || [],
+            grade: p.grade || '',
+            school: p.school || '',
+            hobbies: p.hobbies || [],
+            socials: { instagram: p.socials?.instagram || '', snapchat: p.socials?.snapchat || '', tiktok: p.socials?.tiktok || '' },
+            personality: p.personality || '',
+            question_answers: {
+              ...PERSONALITY_QUESTIONS.reduce((acc, q) => ({ ...acc, [q]: '' }), {}),
+              ...(p.question_answers || {}),
+            },
+          });
+          // Pre-fill existing photo as first slot if present
+          if (p.profile_pic_url) {
+            setPhotos(prev => {
+              const next = [...prev];
+              next[0] = { file: null, preview: p.profile_pic_url, url: p.profile_pic_url };
+              return next;
+            });
+          }
+        }
+      } catch {
+        // No profile yet — stay in create mode
+      } finally {
+        setLoadingProfile(false);
+      }
+    };
+    load();
+  }, [user]);
 
   const handleInputChange = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
   const handleSocialChange = (platform, value) => setFormData(prev => ({ ...prev, socials: { ...prev.socials, [platform]: value } }));
@@ -143,8 +189,8 @@ const ProfileSetup = () => {
       }
     }
     if (currentStep === 5) {
-      if (formData.personality.length < 30) {
-        toast.error('Write at least 30 characters about yourself'); return false;
+      if (wordCount(formData.personality) < 10) {
+        toast.error('Write at least 10 words about yourself'); return false;
       }
     }
     return true;
@@ -463,9 +509,14 @@ const ProfileSetup = () => {
                 className="input-dark h-28 resize-none"
                 placeholder="Are you outgoing or chill? Adventurous or homebody? Funny or serious? Describe yourself in your own words…"
               />
-              <p className={`text-xs mt-1 text-right ${formData.personality.length < 30 ? 'text-red-400/70' : 'text-green-400/70'}`}>
-                {formData.personality.length} chars {formData.personality.length < 30 ? `(need ${30 - formData.personality.length} more)` : '✓'}
-              </p>
+              {(() => {
+                const wc = wordCount(formData.personality);
+                return (
+                  <p className={`text-xs mt-1 text-right ${wc < 10 ? 'text-red-400/70' : 'text-green-400/70'}`}>
+                    {wc} word{wc !== 1 ? 's' : ''} {wc < 10 ? `(need ${10 - wc} more)` : '✓'}
+                  </p>
+                );
+              })()}
             </div>
 
             <div className="space-y-4">
@@ -490,6 +541,14 @@ const ProfileSetup = () => {
     }
   };
 
+  if (loadingProfile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-2 border-white/10 border-t-pink-500 animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen py-8 px-4">
       <div className="max-w-lg mx-auto">
@@ -497,6 +556,7 @@ const ProfileSetup = () => {
         {/* Header */}
         <div className="text-center mb-6">
           <span className="font-prom text-3xl gradient-text">PromMatch</span>
+          {isEditMode && <p className="text-white/40 text-xs mt-1">Editing your profile</p>}
         </div>
 
         {/* Step indicators */}
@@ -572,9 +632,9 @@ const ProfileSetup = () => {
                 className="flex-1 btn-prom py-3 rounded-xl flex items-center justify-center gap-2 text-sm disabled:opacity-50"
               >
                 {loading ? (
-                  <><div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" /> Creating…</>
+                  <><div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" /> {isEditMode ? 'Saving…' : 'Creating…'}</>
                 ) : (
-                  <>Find My Match 💕</>
+                  isEditMode ? <>Save Changes ✓</> : <>Find My Match 💕</>
                 )}
               </button>
             )}

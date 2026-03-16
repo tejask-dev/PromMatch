@@ -143,19 +143,49 @@ const Dashboard = () => {
           </div>
         </motion.div>
 
-        {/* Questionnaire CTA */}
+        {/* Questionnaire CTA — prominent banner */}
         {!hasAnswers && (
-          <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }}
-            className="glass-card rounded-2xl p-4 flex items-center gap-4 cursor-pointer hover:bg-white/10 transition-colors"
-            onClick={() => navigate('/questionnaire')}>
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg, #ff1a91, #7c3aed)' }}>
-              <Zap className="w-5 h-5 text-white" />
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            onClick={() => navigate('/questionnaire')}
+            className="relative rounded-3xl overflow-hidden cursor-pointer group"
+            style={{ background: 'linear-gradient(135deg, rgba(245,158,11,0.18) 0%, rgba(255,26,145,0.18) 50%, rgba(124,58,237,0.18) 100%)', border: '1px solid rgba(245,158,11,0.35)' }}
+          >
+            {/* Animated glow */}
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+              style={{ background: 'linear-gradient(135deg, rgba(245,158,11,0.08), rgba(255,26,145,0.08))' }} />
+
+            <div className="relative p-5 flex items-center gap-4">
+              {/* Star icon with pulse */}
+              <div className="relative flex-shrink-0">
+                <motion.div
+                  animate={{ scale: [1, 1.12, 1] }}
+                  transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
+                  className="w-14 h-14 rounded-2xl flex items-center justify-center"
+                  style={{ background: 'linear-gradient(135deg, #f59e0b, #ff1a91)' }}
+                >
+                  <Star className="w-7 h-7 text-white" fill="white" />
+                </motion.div>
+                <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-yellow-400 flex items-center justify-center">
+                  <span className="text-[9px] font-black text-black">!</span>
+                </div>
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-bold uppercase tracking-widest mb-0.5" style={{ color: '#f59e0b' }}>Action Required</p>
+                <p className="font-black text-white text-base leading-tight mb-1">Complete Your Personality Test ⭐</p>
+                <p className="text-white/55 text-xs leading-snug">Answer questions so the AI can find your best match — takes 2 minutes and dramatically improves your results.</p>
+              </div>
+
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center group-hover:translate-x-1 transition-transform"
+                  style={{ background: 'rgba(245,158,11,0.2)', border: '1px solid rgba(245,158,11,0.4)' }}>
+                  <ArrowRight className="w-4 h-4" style={{ color: '#f59e0b' }} />
+                </div>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-bold text-white text-sm">Boost Your Matches 🚀</p>
-              <p className="text-white/50 text-xs">Answer a few questions for smarter recommendations</p>
-            </div>
-            <ArrowRight className="w-4 h-4 text-white/30 flex-shrink-0" />
           </motion.div>
         )}
 
