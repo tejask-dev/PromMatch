@@ -95,6 +95,19 @@ const Questionnaire = () => {
     );
   }
 
+  if (!loading && categories.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="glass-card rounded-3xl p-8 max-w-sm w-full text-center">
+          <div className="text-5xl mb-4">🤔</div>
+          <h2 className="font-black text-white text-xl mb-2">No Questions Yet</h2>
+          <p className="text-white/50 text-sm mb-5">Check back soon — we're adding questions!</p>
+          <button onClick={() => navigate('/dashboard')} className="btn-prom px-6 py-2.5 text-sm">Back to Dashboard</button>
+        </div>
+      </div>
+    );
+  }
+
   const currentCat = categories[catIndex];
   const isLast = catIndex === categories.length - 1;
 

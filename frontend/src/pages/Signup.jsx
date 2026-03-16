@@ -159,12 +159,13 @@ const Signup = () => {
             <div>
               <label className="block text-white/70 text-sm font-medium mb-2">Email</label>
               <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 pointer-events-none" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="input-dark pl-10"
+                  className="input-dark"
+                  style={{ paddingLeft: '2.5rem' }}
                   placeholder="you@school.edu"
                   required
                 />
@@ -174,12 +175,13 @@ const Signup = () => {
             <div>
               <label className="block text-white/70 text-sm font-medium mb-2">Password</label>
               <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 pointer-events-none" />
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="input-dark pl-10"
+                  className="input-dark"
+                  style={{ paddingLeft: '2.5rem' }}
                   placeholder="••••••••"
                   required
                   minLength={6}

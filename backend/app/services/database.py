@@ -43,7 +43,6 @@ class DatabaseService:
     # USER OPERATIONS
     # ==========================================
     
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(min=1, max=5))
     async def create_user(self, auth_id: str, email: str, profile_data: Dict[str, Any]) -> Dict[str, Any]:
         """Create a new user profile"""
         data = {
@@ -59,7 +58,6 @@ class DatabaseService:
             return result.data[0]
         raise Exception("Failed to create user")
     
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(min=1, max=5))
     async def update_user(self, user_id: str, profile_data: Dict[str, Any]) -> Dict[str, Any]:
         """Update user profile by internal UUID"""
         result = self._client.table("users").update(profile_data).eq("id", user_id).execute()
@@ -69,7 +67,6 @@ class DatabaseService:
             return result.data[0]
         raise Exception(f"Failed to update user: {user_id}")
     
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(min=1, max=5))
     async def update_user_by_auth_id(self, auth_id: str, profile_data: Dict[str, Any]) -> Dict[str, Any]:
         """Update user profile by auth_id (from Supabase Auth)"""
         result = self._client.table("users").update(profile_data).eq("auth_id", auth_id).execute()

@@ -70,14 +70,18 @@ async def submit_answers(
         if not user:
             raise HTTPException(status_code=404, detail="User profile not found")
 
-        # Update user with questionnaire answers
+        # Merge new answers with existing ones (don't overwrite profile personality answers)
+        existing_answers = user.get("question_answers") or {}
+        merged_answers = {**existing_answers, **answers}
+
+        # Update user with merged questionnaire answers
         updated_user = await db.update_user_by_auth_id(auth_id, {
-            "question_answers": answers
+            "question_answers": merged_answers
         })
 
         # Regenerate embedding in background with new answers
         if updated_user:
-            merged_profile = {**user, "question_answers": answers}
+            merged_profile = {**user, "question_answers": merged_answers}
             background_tasks.add_task(_regenerate_embedding, auth_id, merged_profile)
 
         return {

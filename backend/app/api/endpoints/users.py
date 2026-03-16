@@ -64,6 +64,18 @@ async def create_or_update_profile(
         logger.error(f"Profile create/update failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.get("/profile/check/{auth_id}", response_model=dict)
+async def check_profile_exists(auth_id: str):
+    """Check if user has completed their profile — must be defined BEFORE /profile/{auth_id}"""
+    db = DatabaseService()
+
+    try:
+        exists = await db.user_exists(auth_id)
+        return {"exists": exists}
+    except Exception as e:
+        logger.error(f"Profile check failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.get("/profile/{auth_id}", response_model=dict)
 async def get_profile(auth_id: str):
     """Get user profile by auth ID"""
@@ -83,18 +95,6 @@ async def get_profile(auth_id: str):
         raise
     except Exception as e:
         logger.error(f"Profile fetch failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@router.get("/profile/check/{auth_id}", response_model=dict)
-async def check_profile_exists(auth_id: str):
-    """Check if user has completed their profile"""
-    db = DatabaseService()
-
-    try:
-        exists = await db.user_exists(auth_id)
-        return {"exists": exists}
-    except Exception as e:
-        logger.error(f"Profile check failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 # ==========================================

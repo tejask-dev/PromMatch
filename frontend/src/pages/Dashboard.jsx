@@ -66,7 +66,9 @@ const Dashboard = () => {
       try {
         const profileRes = await axios.get(`${API_BASE_URL}/users/profile/${user.id}`);
         const qa = profileRes.data?.profile?.question_answers || {};
-        setHasAnswers(Object.keys(qa).length > 3);
+        // Profile setup adds ~5 text-key answers; dedicated questionnaire adds 15+
+        // Show CTA until they complete the dedicated questionnaire
+        setHasAnswers(Object.keys(qa).length >= 15);
       } catch (e) {}
     } catch (e) {
       toast.error('Error loading data');
