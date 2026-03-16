@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import { Mail, Lock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import FloatingParticles from '../components/FloatingParticles';
+import PrivacyPolicyModal from '../components/PrivacyPolicyModal';
 
 const TAGLINES = [
   'Find Your Perfect Prom Date ✨',
@@ -18,6 +19,7 @@ const Signup = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [taglineIndex, setTaglineIndex] = useState(0);
+  const [showPrivacy, setShowPrivacy] = useState(false);
   const { signIn, signUp, signInWithGoogle } = useAuth();
 
   useEffect(() => {
@@ -29,15 +31,32 @@ const Signup = () => {
 
   const handleEmailAuth = async (e) => {
     e.preventDefault();
+    if (!isLogin) {
+      // Show privacy policy first before creating account
+      setShowPrivacy(true);
+      return;
+    }
+    await doSignIn();
+  };
+
+  const doSignIn = async () => {
     setLoading(true);
     try {
-      if (isLogin) {
-        await signIn(email, password);
-        toast.success('Welcome back! 💕');
-      } else {
-        await signUp(email, password);
-        toast.success('Account created! Check your email to confirm.');
-      }
+      await signIn(email, password);
+      toast.success('Welcome back! 💕');
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const doSignUp = async () => {
+    setShowPrivacy(false);
+    setLoading(true);
+    try {
+      await signUp(email, password);
+      toast.success('Account created! Check your email to confirm.');
     } catch (error) {
       toast.error(error.message);
     } finally {
@@ -57,6 +76,11 @@ const Signup = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+      <PrivacyPolicyModal
+        isOpen={showPrivacy}
+        onAccept={doSignUp}
+        onClose={() => setShowPrivacy(false)}
+      />
       <FloatingParticles count={20} />
 
       {/* Ambient orbs */}

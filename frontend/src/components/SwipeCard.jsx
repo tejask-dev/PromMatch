@@ -105,7 +105,12 @@ const SwipeCard = ({ profile, compatibility, onSwipe, style }) => {
 
       {/* Bottom info */}
       <div className="absolute bottom-0 left-0 right-0 p-5 pointer-events-none">
-        <h2 className="text-3xl font-extrabold text-white mb-1 drop-shadow-lg">{profile.name}</h2>
+        <h2 className="text-3xl font-extrabold text-white mb-0.5 drop-shadow-lg">{profile.name}</h2>
+        {profile.school && (
+          <p className="text-white/60 text-xs font-medium mb-1 flex items-center gap-1">
+            🏫 {profile.school}
+          </p>
+        )}
         {profile.bio && <p className="text-white/75 text-sm mb-3 line-clamp-2 leading-snug">{profile.bio}</p>}
         {profile.hobbies?.length > 0 && (
           <div className="flex flex-wrap gap-1.5">

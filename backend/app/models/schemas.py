@@ -17,12 +17,13 @@ class UserProfileBase(BaseModel):
     bio: str = Field(..., max_length=500)
     gender: Literal["male", "female", "non-binary", "other"]
     looking_for: List[str] = Field(default=["male", "female", "non-binary", "other"])
-    grade: Literal["freshman", "sophomore", "junior", "senior"]
+    grade: Literal["junior", "senior"]
+    school: Optional[str] = None
     hobbies: List[str]
     socials: Dict[str, str]
     profile_pic_url: Optional[str] = None
     photos: Optional[List[UserPhoto]] = []
-    personality: str = Field(..., min_length=50)
+    personality: str = Field(..., min_length=30)
     question_answers: Dict[str, Any] = Field(default_factory=dict)
 
 class UserProfileCreate(UserProfileBase):

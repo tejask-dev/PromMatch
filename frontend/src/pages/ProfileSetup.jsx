@@ -9,10 +9,8 @@ import { uploadToSupabase } from '../services/imageUpload';
 import { API_BASE_URL, getAuthHeaders } from '../config/api';
 
 const GRADE_OPTIONS = [
-  { value: 'freshman', label: 'Freshman (9th)' },
-  { value: 'sophomore', label: 'Sophomore (10th)' },
-  { value: 'junior', label: 'Junior (11th)' },
-  { value: 'senior', label: 'Senior (12th)' },
+  { value: 'junior', label: 'Grade 11 (Junior)' },
+  { value: 'senior', label: 'Grade 12 (Senior)' },
 ];
 
 const GENDER_OPTIONS = [
@@ -62,6 +60,7 @@ const ProfileSetup = () => {
     gender: '',
     looking_for: [],
     grade: '',
+    school: '',
     hobbies: [],
     socials: { instagram: '', snapchat: '', tiktok: '' },
     personality: '',
@@ -126,7 +125,7 @@ const ProfileSetup = () => {
 
   const validateStep = () => {
     if (currentStep === 1) {
-      if (!formData.name.trim() || !formData.bio.trim() || !formData.gender || !formData.grade) {
+      if (!formData.name.trim() || !formData.bio.trim() || !formData.gender || !formData.grade || !formData.school.trim()) {
         toast.error('Please fill in all required fields'); return false;
       }
       if (formData.looking_for.length === 0) {
@@ -172,6 +171,7 @@ const ProfileSetup = () => {
         gender: formData.gender,
         looking_for: formData.looking_for,
         grade: formData.grade,
+        school: formData.school,
         hobbies: formData.hobbies,
         personality: formData.personality,
         question_answers: formData.question_answers,
@@ -256,6 +256,17 @@ const ProfileSetup = () => {
                   {GRADE_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                 </select>
               </div>
+            </div>
+
+            <div>
+              <label className="block text-white/70 text-sm font-medium mb-2">School *</label>
+              <input
+                type="text"
+                value={formData.school}
+                onChange={(e) => handleInputChange('school', e.target.value)}
+                className="input-dark"
+                placeholder="Your high school name"
+              />
             </div>
 
             <div>
