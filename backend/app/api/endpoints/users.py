@@ -28,10 +28,18 @@ async def create_or_update_profile(
     auth_id = current_user["sub"]
     email = current_user.get("email") or f"{auth_id}@prommatch.app"
 
+    # Known columns in the users table — keeps unknown schema fields from causing DB errors
+    ALLOWED_COLUMNS = {
+        "name", "bio", "gender", "looking_for", "grade", "school",
+        "hobbies", "socials", "profile_pic_url", "photos",
+        "personality", "question_answers",
+    }
+
     try:
         existing = await db.get_user_by_auth_id(auth_id)
 
-        profile_data = profile.model_dump(exclude={"user_id"})
+        raw = profile.model_dump(exclude={"user_id"})
+        profile_data = {k: v for k, v in raw.items() if k in ALLOWED_COLUMNS}
 
         if existing:
             updated = await db.update_user_by_auth_id(auth_id, profile_data)

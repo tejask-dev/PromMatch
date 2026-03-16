@@ -22,6 +22,9 @@ CREATE INDEX IF NOT EXISTS user_photos_primary_idx ON user_photos (user_id, is_p
 ALTER TABLE matches ADD COLUMN IF NOT EXISTS compatibility_score DECIMAL(5,2);
 CREATE INDEX IF NOT EXISTS matches_compatibility_idx ON matches (compatibility_score DESC);
 
+-- Add school column to users
+ALTER TABLE users ADD COLUMN IF NOT EXISTS school TEXT;
+
 -- ============================================
 -- ROW LEVEL SECURITY
 -- ============================================
