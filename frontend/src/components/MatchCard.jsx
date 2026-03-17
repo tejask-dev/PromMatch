@@ -39,6 +39,9 @@ const MatchCard = ({ match, index }) => {
         <p className="text-white/50 text-xs capitalize">
           {GRADE_LABELS[user.grade] || user.grade} · {user.gender}
         </p>
+        {user.school && (
+          <p className="text-white/35 text-xs truncate mt-0.5">🏫 {user.school}</p>
+        )}
       </div>
 
       {/* Compatibility score */}

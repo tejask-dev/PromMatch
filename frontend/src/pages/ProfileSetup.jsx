@@ -2,11 +2,12 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { Camera, X, ArrowRight, ArrowLeft, Plus, Check } from 'lucide-react';
+import { Camera, X, ArrowRight, ArrowLeft, Plus, Check, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 import { uploadToSupabase } from '../services/imageUpload';
 import { API_BASE_URL, getAuthHeaders } from '../config/api';
+import { WINDSOR_ESSEX_SCHOOLS, isValidWindsorEssexSchool } from '../data/schools';
 
 const wordCount = (str) => str.trim().split(/\s+/).filter(Boolean).length;
 
@@ -57,6 +58,16 @@ const ProfileSetup = () => {
   const [photos, setPhotos] = useState(Array(6).fill(null));
   const [uploadingSlot, setUploadingSlot] = useState(null);
   const fileRefs = useRef([]);
+  const [schoolSearch, setSchoolSearch] = useState('');
+  const [showSchoolDropdown, setShowSchoolDropdown] = useState(false);
+  const schoolRef = useRef(null);
+
+  // Close school dropdown on outside click
+  useEffect(() => {
+    const handleClick = (e) => { if (schoolRef.current && !schoolRef.current.contains(e.target)) setShowSchoolDropdown(false); };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -173,6 +184,9 @@ const ProfileSetup = () => {
     if (currentStep === 1) {
       if (!formData.name.trim() || !formData.bio.trim() || !formData.gender || !formData.grade || !formData.school.trim()) {
         toast.error('Please fill in all required fields'); return false;
+      }
+      if (!isValidWindsorEssexSchool(formData.school)) {
+        toast.error('Please select a valid Windsor-Essex County school'); return false;
       }
       if (formData.looking_for.length === 0) {
         toast.error("Please select who you're interested in"); return false;
@@ -304,15 +318,62 @@ const ProfileSetup = () => {
               </div>
             </div>
 
-            <div>
-              <label className="block text-white/70 text-sm font-medium mb-2">School *</label>
-              <input
-                type="text"
-                value={formData.school}
-                onChange={(e) => handleInputChange('school', e.target.value)}
-                className="input-dark"
-                placeholder="Your high school name"
-              />
+            <div ref={schoolRef} className="relative">
+              <label className="block text-white/70 text-sm font-medium mb-2">School * <span className="text-white/30 font-normal text-xs">(Windsor-Essex only)</span></label>
+              <div className="relative">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 pointer-events-none" />
+                <input
+                  type="text"
+                  value={formData.school || schoolSearch}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    handleInputChange('school', '');
+                    setSchoolSearch(val);
+                    setShowSchoolDropdown(true);
+                  }}
+                  onFocus={() => { setSchoolSearch(''); handleInputChange('school', ''); setShowSchoolDropdown(true); }}
+                  className="input-dark"
+                  style={{ paddingLeft: '2.5rem' }}
+                  placeholder="Search your school…"
+                  autoComplete="off"
+                />
+                {formData.school && <Check className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-green-400 pointer-events-none" />}
+              </div>
+              <AnimatePresence>
+                {showSchoolDropdown && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute z-50 w-full mt-1 rounded-xl overflow-hidden shadow-2xl max-h-52 overflow-y-auto"
+                    style={{ background: '#1a0a2e', border: '1px solid rgba(255,255,255,0.15)' }}
+                  >
+                    {WINDSOR_ESSEX_SCHOOLS.filter(s =>
+                      s.name.toLowerCase().includes((formData.school || schoolSearch).toLowerCase()) ||
+                      s.city.toLowerCase().includes((formData.school || schoolSearch).toLowerCase())
+                    ).map((school) => (
+                      <button
+                        key={school.name}
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => { handleInputChange('school', school.name); setSchoolSearch(school.name); setShowSchoolDropdown(false); }}
+                        className="w-full text-left px-4 py-2.5 hover:bg-white/10 transition-colors"
+                      >
+                        <p className="text-white text-sm font-medium">{school.name}</p>
+                        <p className="text-white/40 text-xs">{school.city} · {school.board}</p>
+                      </button>
+                    ))}
+                    {WINDSOR_ESSEX_SCHOOLS.filter(s =>
+                      s.name.toLowerCase().includes((formData.school || schoolSearch).toLowerCase()) ||
+                      s.city.toLowerCase().includes((formData.school || schoolSearch).toLowerCase())
+                    ).length === 0 && (
+                      <div className="px-4 py-3 text-center">
+                        <p className="text-white/50 text-sm">No Windsor-Essex school found</p>
+                        <p className="text-white/30 text-xs mt-0.5">This platform is for Windsor-Essex County students only</p>
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             <div>
